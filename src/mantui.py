@@ -4,26 +4,38 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Footer, Header, Input, Label, Static
 
 from openai import OpenAI
+from helpers import get_active_model
 from fetcher import async_fetch
 
 class ManTUI(App):
-    TITLE = "Smart-man"
-    SUB_TITLE = "RTFM."
-
     """
     Main TUI class, contains the css styling, layout, 
     and core structure for the application
     """
 
+    TITLE = "Smart-man"
+    SUB_TITLE = "RTFM."
+
     CSS = """
     /* Layout */
     #sidebar { width: 20%; dock: left; border-right: solid $accent; background: $panel; }
-    #chat-container { width: 85%; height: 100%; padding: 1; }
+    #chat-container { width: 100%; height: 100%; padding: 1; margin: 1; border: solid $accent; }
     
     /* Styling */
     .sidebar-header { text-align: center; background: $accent; color: black; padding: 1; width: 100%; }
     .status-box { background: $surface; border: solid $accent; margin: 1; padding: 1; color: $text-muted; }
     .active-manual { color: $accent; text-style: bold; }
+
+    #cmd_input:focus{
+        border: purple
+    }
+    #chat_input:focus{
+        border: purple
+    }
+
+    #mdl_active{
+        color: purple
+    }
     
     Input { margin: 1 0; }
     
@@ -39,6 +51,12 @@ class ManTUI(App):
     current_manual_text = None
 
     def compose(self) -> ComposeResult:
+        """
+        We use compose in textual for building layouts
+        In this case we are placing and preparing all the 
+        major components.
+        """
+
         yield Header()
         with Horizontal():
             # side bar, left
@@ -53,7 +71,7 @@ class ManTUI(App):
                     yield Label("", id="lbl_status")
                     yield Label("Active Model:", classes="model-label")
                     try:
-                        yield Label(get_active_model(), id="mdl_active", classes="active-manual")
+                        yield Label("Loading...", id="mdl_active", classes="active-manual")
                     except Exception as e:
                         yield Label(e, id="mdl_active", classes="active-manual")
 
@@ -64,10 +82,31 @@ class ManTUI(App):
         yield Input(placeholder="Ask about the manual...", id="chat_input", classes="dock-bottom")
         yield Footer()
 
+    def on_mount(self):
+        """
+        On mount is when a widget is added. 
+        Here we immediatley call for model name
+        """
+
+        self.check_model_status()
+        self.screen.styles.border = ("outer", "orange")
+
+    @work(thread=True)
+    def check_model_status(self):
+        """
+        Here we are making a threaded call to update the label. 
+        This is more performant than calling the function 
+        at runtime. 
+        """
+
+        status = get_active_model()
+        self.call_from_thread(self.query_one("#mdl_active", Label).update, status)
+
     async def on_input_submitted(self, event: Input.Submitted):
         """
         input handled, deals with either new chats or man page changes
         """
+
         val = event.value
         event.input.value = ""
 
@@ -91,6 +130,7 @@ class ManTUI(App):
         """
         Switch loaded man page in context, updates sidebar
         """
+
         lbl_status = self.query_one("#lbl_status", Label)
         lbl_active = self.query_one("#lbl_active", Label)
         
@@ -119,8 +159,9 @@ class ManTUI(App):
         """
         Controls look and behavior of chat window as messages are added
         """
+
         container = self.query_one("#chat-container", VerticalScroll)
-        widget = ChatBubble(f"[{speaker}]: {text}", classes=css_class)
+        widget = ChatBubble(f"{speaker}: {text}", classes=css_class)
 
         await container.mount(widget)
         widget.scroll_visible()
@@ -132,6 +173,7 @@ class ManTUI(App):
         """
         Main loop, takes input, updates ui, and generate response
         """
+
         def create_bubble():
             container = self.query_one("#chat-container", VerticalScroll)
             widget = ChatBubble("Model is thinking...", classes="ai-msg")
@@ -153,8 +195,7 @@ class ManTUI(App):
                 model="local-model", 
                 messages=[
                     {'role': 'system', 'content': system_prompt},
-                    {'role': 'user', 'content': question + "/no_think"}, 
-                    # using no think for now to speed up responses 
+                    {'role': 'user', 'content': question}, 
                 ],
                 stream=True, # otherwise it just sits 
                 temperature=0.1,
@@ -175,19 +216,6 @@ class ManTUI(App):
 class ChatBubble(Static):
     """A widget to hold a single message (User or AI)."""
     pass
-
-def get_active_model(base_url="http://localhost:1234/v1", api_key="lm-studio"):
-    client = OpenAI(base_url=base_url, api_key=api_key)
-    try:
-        # 1 token request to get info from server
-        response = client.chat.completions.create(
-            model="local-model", # we use a dummy name to grab whatever it defaults to (generally whatever model is loaded)
-            messages=[{"role": "user", "content": "hi"}],
-            max_tokens=1 # max tokens to make this really short
-        )
-        return response.model
-    except Exception:
-        return "No model loaded."
 
 if __name__ == "__main__":
     app = ManTUI()
