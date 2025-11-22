@@ -12,3 +12,11 @@ def get_active_model(base_url="http://localhost:1234/v1", api_key="lm-studio"):
         return response.model
     except Exception:
         return "No model loaded."
+    
+def fetch_models(base_url="http://localhost:1234/v1", api_key="lm-studio"):
+    client = OpenAI(base_url=base_url, api_key=api_key)
+    try:
+        response = client.models.list()
+        return response
+    except Exception as e:
+        return e

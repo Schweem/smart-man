@@ -1,10 +1,10 @@
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Input, Label, Static
+from textual.widgets import Footer, Header, Input, Label, Static, Collapsible, ListView, ListItem
 
 from openai import OpenAI
-from helpers import get_active_model
+from helpers import get_active_model, fetch_models
 from fetcher import async_fetch
 
 class ManTUI(App):
@@ -19,7 +19,7 @@ class ManTUI(App):
     CSS = """
     /* Layout */
     #sidebar { width: 20%; dock: left; border-right: solid $accent; background: $panel; }
-    #chat-container { width: 100%; height: 100%; padding: 1; margin: 1; border: solid $accent; }
+    #chat-container { width: 100%; height: 100%; padding: 1; margin: 1; border: solid $accent; background: $boost }
     
     /* Styling */
     .sidebar-header { text-align: center; background: $accent; color: black; padding: 1; width: 100%; }
@@ -42,6 +42,19 @@ class ManTUI(App):
 
     current_manual_name = None
     current_manual_text = None
+
+    def on_mount(self):
+        """
+        On mount is when a widget is added. 
+        Here we immediatley call for model name
+        """
+
+        self.check_model_status()
+        self.screen.styles.border = ("outer", "orange")
+        
+        model_list = self.query_one("#model-list", ListView)
+        for model in fetch_models():
+            model_list.append(ListItem(Label(model.id)))
 
     def compose(self) -> ComposeResult:
         """
@@ -67,6 +80,9 @@ class ManTUI(App):
                         yield Label("Loading...", id="mdl_active", classes="active-manual")
                     except Exception as e:
                         yield Label(e, id="mdl_active", classes="active-manual")
+                    
+                with Collapsible(title="Models", classes="mdl-select"):
+                    yield ListView(id="model-list")
 
             # chat window, right 
             with VerticalScroll(id="chat-container"):
@@ -74,15 +90,6 @@ class ManTUI(App):
                 
         yield Input(placeholder="Ask about the manual...", id="chat_input", classes="dock-bottom")
         yield Footer()
-
-    def on_mount(self):
-        """
-        On mount is when a widget is added. 
-        Here we immediatley call for model name
-        """
-
-        self.check_model_status()
-        self.screen.styles.border = ("outer", "orange")
 
     @work(thread=True)
     def check_model_status(self):
