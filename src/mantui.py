@@ -26,16 +26,9 @@ class ManTUI(App):
     .status-box { background: $surface; border: solid $accent; margin: 1; padding: 1; color: $text-muted; }
     .active-manual { color: $accent; text-style: bold; }
 
-    #cmd_input:focus{
-        border: purple
-    }
-    #chat_input:focus{
-        border: purple
-    }
-
-    #mdl_active{
-        color: purple
-    }
+    #cmd_input:focus{ border: purple }
+    #chat_input:focus{ border: purple }
+    #mdl_active{ color: purple }
     
     Input { margin: 1 0; }
     

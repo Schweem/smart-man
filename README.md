@@ -9,10 +9,18 @@ The project reads in a man page, passes it as context to a local (or openAI comp
 
 - Learn `textual` for building python TUIs.
 - Learn to use `openAI endpoints` with LMStudio instead of their python library.
-- Scaffold a simple tool that I would actually consider using.
+- Scaffold a simple tool that I would actually consider using with local LLM.
+
+### Features
+
+- [x] Reads man pages
+- [x] Feed man page to LLM
+- [x] OpenAPI endpoint compatible
+- [] Model selection
+- [] Context info 
 
 ## Requirements
 
-- **Unix-based OS**: as Shlex is designed with POSIX compliance in mind its worth mentioning that the docs do not guarantee compatibility or safe code execution on operating systems like windows.
+- **Unix-based OS**: as Shlex is designed with POSIX compliance in mind its worth mentioning that the docs do not guarantee compatibility or safe code execution on operating systems like windows. *Tested on MacOS 26.1 and Ubuntu 24LTS* 
 - **OpenAI compatible endpoint**: This can take the form of a local model hosted via something like LMStudio or even vLLM, alternativley this should work with any openAI endpoints compatible endpoint. (_Model select to come_)
 - **Python 3.10+** (Built on 3.10.19)
