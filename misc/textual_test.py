@@ -1,11 +1,7 @@
 from fetcher import async_fetch
 
-from openai import OpenAI
-
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Input, RichLog, Static
-from textual.containers import Container
-from textual import work
+from textual.widgets import Header, Footer, Input, RichLog
 
 class MainTui(App):
     """
