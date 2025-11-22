@@ -16,8 +16,8 @@ The project reads in a man page, passes it as context to a local (or openAI comp
 - [x] Reads man pages
 - [x] Feed man page to LLM
 - [x] OpenAPI endpoint compatible
-- [] Model selection
-- [] Context info 
+- [ ] Model selection
+- [ ] Context info 
 
 ## Requirements
 
