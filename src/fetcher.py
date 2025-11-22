@@ -3,6 +3,11 @@ import shlex
 import subprocess
 
 def fetch_page(command : str):
+    """
+    Use shlex and subprocess to sanitze, execute, and return 
+    contents of a shell command. 
+    """
+
     sanitized_command = shlex.quote(command) # shelx sanatize
     shell_command = f"man -P cat {sanitized_command} | col -b"
 
@@ -20,6 +25,12 @@ def fetch_page(command : str):
         return e
     
 async def async_fetch(command : str):
+    """
+    Like fetch page, but async and less likley to bog 
+    down the app. Same main control flow but we collect
+    from asynchronous threads. 
+    """
+
     sanitized_command = shlex.quote(command) # sanatize command with shlex 
     shell_command = f"man -P cat {sanitized_command} | col -b"
 

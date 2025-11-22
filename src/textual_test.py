@@ -8,6 +8,11 @@ from textual.containers import Container
 from textual import work
 
 class MainTui(App):
+    """
+    Test class for learning basic textual. 
+    Take user input read out its man page.
+    """
+
     CSS = """
     Input {
         dock: top;
@@ -25,12 +30,21 @@ class MainTui(App):
     BINDINGS = [("q", "quit", "Quit")]
 
     def compose(self) -> ComposeResult:
+        """
+        How textual builds app structure
+        """
+        
         yield Header()
         yield Input(placeholder="Enter a shell command...")
         yield RichLog(id="results", highlight=True, markup=False)
         yield Footer()
 
     async def on_input_submitted(self, event: Input.Submitted):
+        """
+        Textual event handler, controls what happens 
+        when input is submitted.
+        """
+
         command = event.value
         log = self.query_one('#results', RichLog)
 

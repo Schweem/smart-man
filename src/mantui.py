@@ -4,7 +4,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Footer, Header, Input, Label, Static, Collapsible, ListView, ListItem
 
 from openai import OpenAI
-from helpers import get_active_model, fetch_models
+from helpers import get_active_model, fetch_models, is_embedding
 from fetcher import async_fetch
 
 class ManTUI(App):
@@ -15,6 +15,8 @@ class ManTUI(App):
 
     TITLE = "Smart-man"
     SUB_TITLE = "RTFM."
+
+    selected_model = "local-model" # temp placeholder, falls back to loaded model in LMStudio
 
     CSS = """
     /* Layout */
@@ -53,8 +55,15 @@ class ManTUI(App):
         self.screen.styles.border = ("outer", "orange")
         
         model_list = self.query_one("#model-list", ListView)
+        # loop through models and add availible ones to the list
         for model in fetch_models():
-            model_list.append(ListItem(Label(model.id)))
+            if is_embedding(model.id):
+                continue
+            item = ListItem(Label(model.id))
+            item.target_id = model.id # using a custom id field due to naming issues with textual id
+
+            model_list.append(item)
+            #model_list.append(ListItem(Label(model.id)))
 
     def compose(self) -> ComposeResult:
         """
@@ -101,6 +110,20 @@ class ManTUI(App):
 
         status = get_active_model()
         self.call_from_thread(self.query_one("#mdl_active", Label).update, status)
+
+    def on_list_view_selected(self, event: ListView.Selected):
+        """
+        even handler for selection in list view
+        handles model change
+        """
+        
+        new_model_id = event.item.target_id # grab selected model
+        
+        self.selected_model = new_model_id # set it
+        
+        # update labels and text
+        self.query_one("#mdl_active", Label).update(new_model_id)
+        self.notify(f"Model switched to {new_model_id}")
 
     async def on_input_submitted(self, event: Input.Submitted):
         """
@@ -192,17 +215,16 @@ class ManTUI(App):
 
         try:
             stream = client.chat.completions.create(
-                model="local-model", 
+                model=self.selected_model, 
                 messages=[
                     {'role': 'system', 'content': system_prompt},
                     {'role': 'user', 'content': question}, 
                 ],
-                stream=True, # otherwise it just sits 
-                temperature=0.1,
+                stream=True, # otherwise it just sits and waits 
+                temperature=0.1, # low temp for consitent responses
             )
 
-            full_response = ""
-            
+            full_response = "" # start empty             
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
