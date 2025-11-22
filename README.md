@@ -1,4 +1,5 @@
 # smart-man
+![Example usage with grep](misc/demo.png)
 
 Simple python TUI for use of local LLMS directly interacting with man pages for augmented shell command assistance _on unix_.
 

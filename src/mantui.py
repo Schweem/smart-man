@@ -7,6 +7,9 @@ from openai import OpenAI
 from fetcher import async_fetch
 
 class ManTUI(App):
+    TITLE = "Smart-man"
+    SUB_TITLE = "RTFM."
+
     """
     Main TUI class, contains the css styling, layout, 
     and core structure for the application
@@ -14,19 +17,19 @@ class ManTUI(App):
 
     CSS = """
     /* Layout */
-    #sidebar { width: 25%; dock: left; border-right: solid $accent; background: $panel; }
+    #sidebar { width: 20%; dock: left; border-right: solid $accent; background: $panel; }
     #chat-container { width: 85%; height: 100%; padding: 1; }
     
     /* Styling */
-    .sidebar-header { text-align: center; background: $primary; color: black; padding: 1; width: 100%; }
-    .status-box { background: $surface; border: solid $secondary; margin: 1; padding: 1; color: $text-muted; }
+    .sidebar-header { text-align: center; background: $accent; color: black; padding: 1; width: 100%; }
+    .status-box { background: $surface; border: solid $accent; margin: 1; padding: 1; color: $text-muted; }
     .active-manual { color: $accent; text-style: bold; }
     
     Input { margin: 1 0; }
     
     /* Chat Bubbles */
     ChatBubble { padding: 1; margin-bottom: 1; background: $surface; border: wide transparent; }
-    .user-msg { border-left: wide $primary; background: $surface-lighten-1; }
+    .user-msg { border-left: wide $accent; background: $surface-lighten-1; }
     .ai-msg { border-left: wide purple; }
     """
 
@@ -49,7 +52,10 @@ class ManTUI(App):
                     yield Label("None", id="lbl_active", classes="active-manual")
                     yield Label("", id="lbl_status")
                     yield Label("Active Model:", classes="model-label")
-                    yield Label(get_active_model(), id="mdl_active", classes="active-manual")
+                    try:
+                        yield Label(get_active_model(), id="mdl_active", classes="active-manual")
+                    except Exception as e:
+                        yield Label(e, id="mdl_active", classes="active-manual")
 
             # chat window, right 
             with VerticalScroll(id="chat-container"):
