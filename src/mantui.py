@@ -48,6 +48,8 @@ class ManTUI(App):
                     yield Label("Active Manual:", classes="label")
                     yield Label("None", id="lbl_active", classes="active-manual")
                     yield Label("", id="lbl_status")
+                    yield Label("Active Model:", classes="model-label")
+                    yield Label(get_active_model(), id="mdl_active", classes="active-manual")
 
             # chat window, right 
             with VerticalScroll(id="chat-container"):
@@ -93,10 +95,10 @@ class ManTUI(App):
         if text:
             # update labels and display 
             self.current_manual_name = command_name
-            self.current_manual_text = text[:15000]
+            self.current_manual_text = text[:15000] #15k is my current stopping point for context reasons
             
             lbl_active.update(command_name)
-            lbl_status.update("Loaded & Ready.")
+            lbl_status.update("Loaded & Ready.\n")
             
             # clear chat when loading new manual
             container = self.query_one("#chat-container")
@@ -148,7 +150,7 @@ class ManTUI(App):
                     {'role': 'user', 'content': question + "/no_think"}, 
                     # using no think for now to speed up responses 
                 ],
-                stream=True, 
+                stream=True, # otherwise it just sits 
                 temperature=0.1,
             )
 
@@ -157,7 +159,7 @@ class ManTUI(App):
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
-                    full_response += content
+                    full_response += content # build response with stream
                     
                     self.call_from_thread(ai_widget.update, f"[bold purple]AI:[/bold purple] {full_response}")
 
@@ -167,6 +169,19 @@ class ManTUI(App):
 class ChatBubble(Static):
     """A widget to hold a single message (User or AI)."""
     pass
+
+def get_active_model(base_url="http://localhost:1234/v1", api_key="lm-studio"):
+    client = OpenAI(base_url=base_url, api_key=api_key)
+    try:
+        # 1 token request to get info from server
+        response = client.chat.completions.create(
+            model="local-model", # we use a dummy name to grab whatever it defaults to (generally whatever model is loaded)
+            messages=[{"role": "user", "content": "hi"}],
+            max_tokens=1 # max tokens to make this really short
+        )
+        return response.model
+    except Exception:
+        return "No model loaded."
 
 if __name__ == "__main__":
     app = ManTUI()
