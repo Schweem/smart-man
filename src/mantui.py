@@ -1,7 +1,7 @@
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Input, Label, Static, Collapsible, ListView, ListItem
+from textual.widgets import Footer, Header, Input, Label, Static, Collapsible, ListView, ListItem, Markdown
 
 from openai import OpenAI
 from helpers import get_active_model, fetch_models, is_embedding
@@ -98,7 +98,7 @@ class ManTUI(App):
                 with Collapsible(title="Models", classes="mdl-select"):
                     yield ListView(id="model-list")
 
-            # chat window, right 
+            # chat window, right
             with VerticalScroll(id="chat-container"):
                 pass
                 
@@ -235,12 +235,12 @@ class ManTUI(App):
                     content = chunk.choices[0].delta.content
                     full_response += content # build response with stream
                     
-                    self.call_from_thread(ai_widget.update, f"[bold purple]AI:[/bold purple] {full_response}")
+                    self.call_from_thread(ai_widget.update, f"**AI:** {full_response}")
 
         except Exception as e:
             self.call_from_thread(ai_widget.update, f"[red]Error:[/red] {str(e)}")
 
-class ChatBubble(Static):
+class ChatBubble(Markdown):
     """A widget to hold a single message (User or AI)."""
     pass
 
