@@ -1,7 +1,7 @@
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Input, Label, Static, Collapsible, ListView, ListItem, Markdown
+from textual.widgets import Footer, Header, Input, Label, Static, Collapsible, ListView, ListItem, Markdown, TabPane, TabbedContent, Input
 
 from openai import OpenAI
 from helpers import get_active_model, fetch_models, is_embedding
@@ -82,21 +82,29 @@ class ManTUI(App):
             # side bar, left
             with Vertical(id="sidebar"):
                 yield Label("Control Panel", classes="sidebar-header")
-                yield Input(placeholder="Load Command (e.g. tar)", id="cmd_input")
-                
-                # chat info, left center
-                with Vertical(classes="status-box"):
-                    yield Label("Active Manual:", classes="label")
-                    yield Label("None", id="lbl_active", classes="active-manual")
-                    yield Label("", id="lbl_status")
-                    yield Label("Active Model:", classes="model-label")
-                    try:
-                        yield Label("Loading...", id="mdl_active", classes="active-manual")
-                    except Exception as e:
-                        yield Label(e, id="mdl_active", classes="active-manual")
-                    
-                with Collapsible(title="Models", classes="mdl-select"):
-                    yield ListView(id="model-list")
+                with TabbedContent(initial="model"):
+                    with TabPane("Model", id="model"):
+                        yield Input(placeholder="Load Command (e.g. tar)", id="cmd_input")
+                        
+                        # chat info, left center
+                        with Vertical(classes="status-box"):
+                            yield Label("Active Manual:", classes="label")
+                            yield Label("None", id="lbl_active", classes="active-manual")
+                            yield Label("", id="lbl_status")
+                            yield Label("Active Model:", classes="model-label")
+                            try:
+                                yield Label("Loading...", id="mdl_active", classes="active-manual")
+                            except Exception as e:
+                                yield Label(e, id="mdl_active", classes="active-manual")
+                            
+                            with Collapsible(title="Models", classes="mdl-select"):
+                                yield ListView(id="model-list")
+
+                    with TabPane("API", id="api"):
+                        yield Label("OpenAPI Endpoint:")
+                        yield Input(placeholder="http://localhost:1234/v1")
+                        yield Label("API Key:")
+                        yield Input(placeholder="lm-studio")
 
             # chat window, right
             with VerticalScroll(id="chat-container"):
@@ -216,6 +224,7 @@ class ManTUI(App):
         system_prompt = (
             f"You are an expert on CLI tools. Answer briefly based ONLY on the text below.\n"
             f"MANUAL: {context_text}"
+            f"ALWAYS use /no_think"
         )
 
         try:
@@ -238,7 +247,7 @@ class ManTUI(App):
                     self.call_from_thread(ai_widget.update, f"**AI:** {full_response}")
 
         except Exception as e:
-            self.call_from_thread(ai_widget.update, f"[red]Error:[/red] {str(e)}")
+            self.call_from_thread(ai_widget.update, f"**Error:** {str(e)}")
 
 class ChatBubble(Markdown):
     """A widget to hold a single message (User or AI)."""
