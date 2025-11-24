@@ -1,4 +1,5 @@
 # smart-man
+
 ![Example usage with grep](misc/demo.png)
 
 Simple python TUI for use of local LLMS directly interacting with man pages for augmented shell command assistance _on unix_.
@@ -17,10 +18,10 @@ The project reads in a man page, passes it as context to a local (or openAI comp
 - [x] Feed man page to LLM
 - [x] OpenAPI endpoint compatible
 - [x] Model selection (Functional, needs styling)
-- [ ] Context info 
+- [ ] Context info
 
 ## Requirements
 
-- **Unix-based OS**: as Shlex is designed with POSIX compliance in mind its worth mentioning that the docs do not guarantee compatibility or safe code execution on operating systems like windows. *Tested on MacOS 26.1 and Ubuntu 24LTS* 
+- **Unix-based OS**: as Shlex is designed with POSIX compliance in mind its worth mentioning that the docs do not guarantee compatibility or safe code execution on operating systems like windows. _Tested on MacOS 26.1 and Ubuntu 24LTS_
 - **OpenAI compatible endpoint**: This can take the form of a local model hosted via something like LMStudio or even vLLM, alternativley this should work with any openAI endpoints compatible endpoint. (_Model select to come_)
 - **Python 3.10+** (Built on 3.10.19)

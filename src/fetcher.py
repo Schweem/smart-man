@@ -31,22 +31,24 @@ async def async_fetch(command : str):
     from asynchronous threads. 
     """
 
-    sanitized_command = shlex.quote(command) # sanatize command with shlex 
-    shell_command = f"man -P cat {sanitized_command} | col -b"
+    try:
+        sanitized_command = shlex.quote(command) # sanatize command with shlex 
+        shell_command = f"man -P cat {sanitized_command} | col -b"
 
-    process = await asyncio.create_subprocess_shell( # create the asyncio process
-        shell_command,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
+        process = await asyncio.create_subprocess_shell( # create the asyncio process
+            shell_command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
 
-    stdout, stderr = await process.communicate() # await the output of the running process
+        stdout, stderr = await process.communicate() # await the output of the running process
 
-    if process.returncode == 0: # return either the text or the error
-        return stdout.decode().strip()
-    else:
-        return stderr
-
+        if process.returncode == 0: # return either the text or the error
+            return stdout.decode().strip()
+        else:
+            return stderr
+    except Exception as e:
+        print(f"An error occoured {e}")
 
     
 def main() -> None:

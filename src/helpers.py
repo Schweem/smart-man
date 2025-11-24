@@ -36,8 +36,10 @@ def is_embedding(model_name: str) -> bool:
     Helper func to filter out embedding models. 
     Can be expanded for more options. 
     """
+    try:
+        keywords = ["embed", "embedding", "bert", "nomic", "all-minilm"]
 
-    keywords = ["embed", "embedding", "bert", "nomic", "all-minilm"]
-
-    name_lower = model_name.lower()
-    return any(keyword in name_lower for keyword in keywords)
+        name_lower = model_name.lower()
+        return any(keyword in name_lower for keyword in keywords)
+    except Exception as e:
+        print(f"An error has occoured {e}")

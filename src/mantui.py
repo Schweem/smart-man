@@ -56,14 +56,19 @@ class ManTUI(App):
         
         model_list = self.query_one("#model-list", ListView)
         # loop through models and add availible ones to the list
-        for model in fetch_models():
-            if is_embedding(model.id):
-                continue
-            item = ListItem(Label(model.id))
-            item.target_id = model.id # using a custom id field due to naming issues with textual id
+        try:
+            for model in fetch_models():
+                if is_embedding(model.id):
+                    continue
+                item = ListItem(Label(model.id))
+                item.target_id = model.id # using a custom id field due to naming issues with textual id
 
-            model_list.append(item)
-            #model_list.append(ListItem(Label(model.id)))
+                model_list.append(item)
+                #model_list.append(ListItem(Label(model.id)))
+
+        except Exception as e:
+            model_list.append(ListItem(Label("Error connecting to endpoint. \nCheck connection.")))
+            print(f"Error fetching models: {e}")
 
     def compose(self) -> ComposeResult:
         """
