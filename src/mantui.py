@@ -184,15 +184,20 @@ class ManTUI(App):
         """
         Helper function to refresh the model list when we change api keys
         """
-        model_list = self.query_one("#model-list", ListView)
-        model_list.clear()
-        for model in fetch_models(self.api_endpoint, self.api_key):
-            if is_embedding(model.id):
-                continue
-            item = ListItem(Label(model.id))
-            item.target_id = model.id # using a custom id field due to naming issues with textual id
+        try:
+            model_list = self.query_one("#model-list", ListView) # grab it
+            model_list.clear() # clear it
 
-            model_list.append(item)
+            for model in fetch_models(self.api_endpoint, self.api_key): # query it
+                if is_embedding(model.id):
+                    continue
+                item = ListItem(Label(model.id))
+                item.target_id = model.id # using a custom id field due to naming issues with textual id
+
+                model_list.append(item)
+                
+        except Exception as e:
+            print(f"Error: {e}")
 
     async def load_manual(self, command_name):
         """
