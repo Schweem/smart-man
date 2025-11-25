@@ -16,6 +16,9 @@ class ManTUI(App):
     TITLE = "Smart-man"
     SUB_TITLE = "RTFM."
 
+    api_endpoint = "http://localhost:1234/v1"
+    api_key = "lm-studio"
+
     selected_model = "local-model" # temp placeholder, falls back to loaded model in LMStudio
 
     CSS = """
@@ -31,7 +34,9 @@ class ManTUI(App):
     #cmd_input:focus{ border: purple }
     #chat_input:focus{ border: purple }
     #mdl_active{ color: purple }
-    
+
+    ListView { margin: 0 1; }
+    TabbedContent { margin: 1 1; }
     Input { margin: 1 0; }
     
     /* Chat Bubbles */
@@ -102,9 +107,9 @@ class ManTUI(App):
 
                     with TabPane("API", id="api"):
                         yield Label("OpenAPI Endpoint:")
-                        yield Input(placeholder="http://localhost:1234/v1")
+                        yield Input(placeholder="http://localhost:1234/v1", id="endpoint")
                         yield Label("API Key:")
-                        yield Input(placeholder="lm-studio")
+                        yield Input(placeholder="lm-studio", id="apikey")
 
             # chat window, right
             with VerticalScroll(id="chat-container"):
@@ -121,7 +126,7 @@ class ManTUI(App):
         at runtime. 
         """
 
-        status = get_active_model()
+        status = get_active_model(self.api_endpoint, self.api_key)
         self.call_from_thread(self.query_one("#mdl_active", Label).update, status)
 
     def on_list_view_selected(self, event: ListView.Selected):
@@ -143,24 +148,51 @@ class ManTUI(App):
         input handled, deals with either new chats or man page changes
         """
 
-        val = event.value
-        event.input.value = ""
+        try:
+            val = event.value
+            event.input.value = ""
 
-        # load new man page if we submitted one
-        if event.input.id == "cmd_input":
-            await self.load_manual(val)
-        
-        # otherwise treat it as a chat message
-        elif event.input.id == "chat_input":
-            if not self.current_manual_text:
-                self.notify("Please load a manual first!", severity="error")
-                return
+            # load new man page if we submitted one
+            if event.input.id == "cmd_input":
+                await self.load_manual(val)
             
-            # user message to chat
-            await self.add_message("You", val, "user-msg")
-            
-            # stream llm response to use
-            self.stream_ai_response(val, self.current_manual_text)
+            # otherwise treat it as a chat message
+            elif event.input.id == "chat_input":
+                if not self.current_manual_text:
+                    self.notify("Please load a manual first!", severity="error")
+                    return
+                
+                # user message to chat
+                await self.add_message("You", val, "user-msg")
+                
+                # stream llm response to use
+                self.stream_ai_response(val, self.current_manual_text)
+
+            # check for api endpoint submission
+            elif event.input.id == "endpoint":
+                self.api_endpoint = event.value
+                self.update_models()
+
+            # same for api key
+            elif event.input.id == "apikey":
+                self.api_key = event.value
+
+        except Exception as e:
+            print(f"Something went wrong: {e}")
+
+    def update_models(self):
+        """
+        Helper function to refresh the model list when we change api keys
+        """
+        model_list = self.query_one("#model-list", ListView)
+        model_list.clear()
+        for model in fetch_models(self.api_endpoint, self.api_key):
+            if is_embedding(model.id):
+                continue
+            item = ListItem(Label(model.id))
+            item.target_id = model.id # using a custom id field due to naming issues with textual id
+
+            model_list.append(item)
 
     async def load_manual(self, command_name):
         """
@@ -219,7 +251,7 @@ class ManTUI(App):
             
         ai_widget = self.call_from_thread(create_bubble)
 
-        client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+        client = OpenAI(base_url=self.api_endpoint, api_key=self.api_key)
         
         system_prompt = (
             f"You are an expert on CLI tools. Answer briefly based ONLY on the text below.\n"
@@ -244,7 +276,7 @@ class ManTUI(App):
                     content = chunk.choices[0].delta.content
                     full_response += content # build response with stream
                     
-                    self.call_from_thread(ai_widget.update, f"**AI:** {full_response}")
+                    self.call_from_thread(ai_widget.update, f"**Smart-man:** {full_response}")
 
         except Exception as e:
             self.call_from_thread(ai_widget.update, f"**Error:** {str(e)}")
