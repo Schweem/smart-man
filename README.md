@@ -16,7 +16,7 @@ The project reads in a man page, passes it as context to a local (or openAI comp
 
 - [x] Reads man pages
 - [x] Feed man page to LLM
-- [x] OpenAPI endpoint compatible
+- [x] OpenAPI endpoint compatible (Tested on LMStudio and Google AI Studio API)
 - [x] Model selection (Functional, needs styling)
 - [ ] Context info
 
