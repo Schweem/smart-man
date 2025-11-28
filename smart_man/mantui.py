@@ -1,15 +1,29 @@
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.widgets import Footer, Header, Input, Label, Static, Collapsible, ListView, ListItem, Markdown, TabPane, TabbedContent, Input
+from textual.widgets import (
+    Collapsible,
+    Footer,
+    Header,
+    Input,
+    Input,
+    Label,
+    ListItem,
+    ListView,
+    Markdown,
+    TabPane,
+    TabbedContent,
+)
 
 from openai import OpenAI
-from helpers import get_active_model, fetch_models, is_embedding
-from fetcher import async_fetch
+
+from smart_man.helpers import get_active_model, fetch_models, is_embedding
+from smart_man.fetcher import async_fetch
+
 
 class ManTUI(App):
     """
-    Main TUI class, contains the css styling, layout, 
+    Main TUI class, contains the css styling, layout,
     and core structure for the application
     """
 
@@ -19,7 +33,9 @@ class ManTUI(App):
     api_endpoint = "http://localhost:1234/v1"
     api_key = "lm-studio"
 
-    selected_model = "local-model" # temp placeholder, falls back to loaded model in LMStudio
+    selected_model = (
+        "local-model"  # temp placeholder, falls back to loaded model in LMStudio
+    )
 
     CSS = """
     /* Layout */
@@ -52,13 +68,13 @@ class ManTUI(App):
 
     def on_mount(self):
         """
-        On mount is when a widget is added. 
+        On mount is when a widget is added.
         Here we immediatley call for model name
         """
 
         self.check_model_status()
         self.screen.styles.border = ("outer", "orange")
-        
+
         model_list = self.query_one("#model-list", ListView)
         # loop through models and add availible ones to the list
         try:
@@ -66,19 +82,23 @@ class ManTUI(App):
                 if is_embedding(model.id):
                     continue
                 item = ListItem(Label(model.id))
-                item.target_id = model.id # using a custom id field due to naming issues with textual id
+                item.target_id = (
+                    model.id
+                )  # using a custom id field due to naming issues with textual id
 
                 model_list.append(item)
-                #model_list.append(ListItem(Label(model.id)))
+                # model_list.append(ListItem(Label(model.id)))
 
         except Exception as e:
-            model_list.append(ListItem(Label("Error connecting to endpoint. \nCheck connection.")))
+            model_list.append(
+                ListItem(Label("Error connecting to endpoint. \nCheck connection."))
+            )
             print(f"Error fetching models: {e}")
 
     def compose(self) -> ComposeResult:
         """
         We use compose in textual for building layouts
-        In this case we are placing and preparing all the 
+        In this case we are placing and preparing all the
         major components.
         """
 
@@ -89,41 +109,55 @@ class ManTUI(App):
                 yield Label("Control Panel", classes="sidebar-header")
                 with TabbedContent(initial="model"):
                     with TabPane("Model", id="model"):
-                        yield Input(placeholder="Load Command (e.g. tar)", id="cmd_input")
-                        
+                        yield Input(
+                            placeholder="Load Command (e.g. tar)", id="cmd_input"
+                        )
+
                         # chat info, left center
                         with Vertical(classes="status-box"):
                             yield Label("Active Manual:", classes="label")
-                            yield Label("None", id="lbl_active", classes="active-manual")
+                            yield Label(
+                                "None", id="lbl_active", classes="active-manual"
+                            )
                             yield Label("", id="lbl_status")
                             yield Label("Active Model:", classes="model-label")
                             try:
-                                yield Label("Loading...", id="mdl_active", classes="active-manual")
+                                yield Label(
+                                    "Loading...",
+                                    id="mdl_active",
+                                    classes="active-manual",
+                                )
                             except Exception as e:
                                 yield Label(e, id="mdl_active", classes="active-manual")
-                            
+
                             with Collapsible(title="Models", classes="mdl-select"):
                                 yield ListView(id="model-list")
 
                     with TabPane("API", id="api"):
                         yield Label("OpenAPI Endpoint:")
-                        yield Input(placeholder="http://localhost:1234/v1", id="endpoint")
+                        yield Input(
+                            placeholder="http://localhost:1234/v1", id="endpoint"
+                        )
                         yield Label("API Key:")
                         yield Input(placeholder="lm-studio", id="apikey")
 
             # chat window, right
             with VerticalScroll(id="chat-container"):
                 pass
-                
-        yield Input(placeholder="Ask about the manual...", id="chat_input", classes="dock-bottom")
+
+        yield Input(
+            placeholder="Ask about the manual...",
+            id="chat_input",
+            classes="dock-bottom",
+        )
         yield Footer()
 
     @work(thread=True)
     def check_model_status(self):
         """
-        Here we are making a threaded call to update the label. 
-        This is more performant than calling the function 
-        at runtime. 
+        Here we are making a threaded call to update the label.
+        This is more performant than calling the function
+        at runtime.
         """
 
         status = get_active_model(self.api_endpoint, self.api_key)
@@ -134,11 +168,11 @@ class ManTUI(App):
         even handler for selection in list view
         handles model change
         """
-        
-        new_model_id = event.item.target_id # grab selected model
-        
-        self.selected_model = new_model_id # set it
-        
+
+        new_model_id = event.item.target_id  # grab selected model
+
+        self.selected_model = new_model_id  # set it
+
         # update labels and text
         self.query_one("#mdl_active", Label).update(new_model_id)
         self.notify(f"Model switched to {new_model_id}")
@@ -155,16 +189,16 @@ class ManTUI(App):
             # load new man page if we submitted one
             if event.input.id == "cmd_input":
                 await self.load_manual(val)
-            
+
             # otherwise treat it as a chat message
             elif event.input.id == "chat_input":
                 if not self.current_manual_text:
                     self.notify("Please load a manual first!", severity="error")
                     return
-                
+
                 # user message to chat
                 await self.add_message("You", val, "user-msg")
-                
+
                 # stream llm response to use
                 self.stream_ai_response(val, self.current_manual_text)
 
@@ -185,17 +219,19 @@ class ManTUI(App):
         Helper function to refresh the model list when we change api keys
         """
         try:
-            model_list = self.query_one("#model-list", ListView) # grab it
-            model_list.clear() # clear it
+            model_list = self.query_one("#model-list", ListView)  # grab it
+            model_list.clear()  # clear it
 
-            for model in fetch_models(self.api_endpoint, self.api_key): # query it
+            for model in fetch_models(self.api_endpoint, self.api_key):  # query it
                 if is_embedding(model.id):
                     continue
                 item = ListItem(Label(model.id))
-                item.target_id = model.id # using a custom id field due to naming issues with textual id
+                item.target_id = (
+                    model.id
+                )  # using a custom id field due to naming issues with textual id
 
                 model_list.append(item)
-                
+
         except Exception as e:
             print(f"Error: {e}")
 
@@ -206,23 +242,25 @@ class ManTUI(App):
 
         lbl_status = self.query_one("#lbl_status", Label)
         lbl_active = self.query_one("#lbl_active", Label)
-        
+
         lbl_status.update(f"Fetching {command_name}...")
-        
+
         text = await async_fetch(command_name)
-        
+
         if text:
-            # update labels and display 
+            # update labels and display
             self.current_manual_name = command_name
-            self.current_manual_text = text[:15000] #15k is my current stopping point for context reasons
-            
+            self.current_manual_text = text[
+                :15000
+            ]  # 15k is my current stopping point for context reasons
+
             lbl_active.update(command_name)
             lbl_status.update("Loaded & Ready.\n")
-            
+
             # clear chat when loading new manual
             container = self.query_one("#chat-container")
-            await container.remove_children() 
-            
+            await container.remove_children()
+
             self.notify(f"Manual for {command_name} loaded.")
         else:
             lbl_status.update("Error.")
@@ -253,11 +291,11 @@ class ManTUI(App):
             container.mount(widget)
             widget.scroll_visible()
             return widget
-            
+
         ai_widget = self.call_from_thread(create_bubble)
 
         client = OpenAI(base_url=self.api_endpoint, api_key=self.api_key)
-        
+
         system_prompt = (
             f"You are an expert on CLI tools. Answer briefly based ONLY on the text below.\n"
             f"MANUAL: {context_text}"
@@ -266,30 +304,35 @@ class ManTUI(App):
 
         try:
             stream = client.chat.completions.create(
-                model=self.selected_model, 
+                model=self.selected_model,
                 messages=[
-                    {'role': 'system', 'content': system_prompt},
-                    {'role': 'user', 'content': question}, 
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": question},
                 ],
-                stream=True, # otherwise it just sits and waits 
-                temperature=0.1, # low temp for consitent responses
+                stream=True,  # otherwise it just sits and waits
+                temperature=0.1,  # low temp for consitent responses
             )
 
-            full_response = "" # start empty             
+            full_response = ""  # start empty
             for chunk in stream:
                 if chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
-                    full_response += content # build response with stream
-                    
-                    self.call_from_thread(ai_widget.update, f"**Smart-man:** {full_response}")
+                    full_response += content  # build response with stream
+
+                    self.call_from_thread(
+                        ai_widget.update, f"**Smart-man:** {full_response}"
+                    )
 
         except Exception as e:
             self.call_from_thread(ai_widget.update, f"**Error:** {str(e)}")
 
+
 class ChatBubble(Markdown):
     """A widget to hold a single message (User or AI)."""
+
     pass
 
-if __name__ == "__main__":
+
+def main():
     app = ManTUI()
     app.run()
