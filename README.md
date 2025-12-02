@@ -25,3 +25,16 @@ The project reads in a man page, passes it as context to a local (or openAI comp
 - **Unix-based OS**: as Shlex is designed with POSIX compliance in mind its worth mentioning that the docs do not guarantee compatibility or safe code execution on operating systems like windows. _Tested on MacOS 26.1 and Ubuntu 24LTS_
 - **OpenAI compatible endpoint**: This can take the form of a local model hosted via something like LMStudio or even vLLM, alternativley this should work with any openAI endpoints compatible endpoint. (_Model select to come_)
 - **Python 3.10+** (Built on 3.10.19)
+
+## Installation
+
+```bash
+eval "$(poetry shell)"
+poetry install
+```
+
+## Usage
+
+```bash
+smart-man
+```
